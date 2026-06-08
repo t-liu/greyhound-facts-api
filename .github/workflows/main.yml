@@ -1,0 +1,104 @@
+name: Main — Deploy Dev
+
+on:
+  push:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+  AWS_REGION: us-east-1
+  DEPLOY_ENV: dev
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Ruff lint
+        run: ruff check app/ tests/ scripts/
+
+      - name: MyPy type check
+        run: mypy app/
+
+      - name: Pytest with coverage
+        run: pytest --cov=app --cov-report=term-missing --cov-fail-under=90
+
+      - name: Bandit security scan
+        run: bandit -c pyproject.toml -r app/ scripts/
+
+      - name: pip-audit
+        run: pip-audit
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install CDK
+        run: npm install -g aws-cdk
+
+      - name: Install CDK Python deps
+        working-directory: infra
+        run: pip install -r requirements.txt 2>/dev/null || echo "No requirements.txt in infra; CDK lib must be in main requirements"
+
+      - name: CDK synth
+        run: cdk synth --app "python infra/app.py" -c env=${{ env.DEPLOY_ENV }} -c account=${{ secrets.AWS_ACCOUNT_ID }} -c region=${{ env.AWS_REGION }}
+
+  deploy-dev:
+    needs: [validate]
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install CDK
+        run: npm install -g aws-cdk
+
+      - name: Install app deps
+        run: pip install -r requirements.txt
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: CDK bootstrap
+        run: cdk bootstrap aws://${{ secrets.AWS_ACCOUNT_ID }}/${{ env.AWS_REGION }}
+
+      - name: CDK deploy
+        run: cdk deploy --all --app "python infra/app.py" -c env=${{ env.DEPLOY_ENV }} -c account=${{ secrets.AWS_ACCOUNT_ID }} -c region=${{ env.AWS_REGION }} --require-approval never
+
+  smoke-test:
+    needs: [deploy-dev]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Smoke test — health endpoint
+        run: |
+          API_URL=$(aws cloudformation describe-stacks \
+            --stack-name GreyhoundApi-${{ env.DEPLOY_ENV }} \
+            --region ${{ env.AWS_REGION }} \
+            --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" \
+            --output text)
+          curl -sf "$API_URL/v1/health" | grep '"status":"ok"'
