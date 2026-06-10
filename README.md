@@ -81,7 +81,10 @@ Managed with AWS CDK (Python):
 cd infra
 pip install -r requirements.txt
 cdk bootstrap aws://ACCOUNT_ID/REGION
-cdk deploy --all
+# If you are inside a virtual environment:
+cdk deploy --all --app "../.venv/bin/python app.py" -c env=ENV
+# If you are NOT inside a virtual environment:
+cdk deploy --all --app "python app.py" -c env=ENV
 ```
 
 ### CDK Stacks

@@ -11,6 +11,8 @@ import aws_cdk.aws_iam as iam
 import aws_cdk.aws_lambda as lambda_
 import aws_cdk.aws_secretsmanager as secretsmanager
 from constructs import Construct
+from aws_cdk.aws_lambda_python_alpha import PythonFunction
+from aws_cdk import aws_lambda as lambda_
 
 
 class ApiStack(cdk.Stack):
@@ -31,29 +33,21 @@ class ApiStack(cdk.Stack):
         table.grant_read_write_data(lambda_role)
 
         # ── Lambda function ───────────────────────────────────────────────────
-        self.lambda_function = lambda_.Function(
+        self.lambda_function = PythonFunction(
             self,
             "GreyhoundFactsLambda",
-            function_name=f"greyhound-facts-api-{env_name}",
-            runtime=lambda_.Runtime.PYTHON_3_12,
-            handler="app.lambda_handler.handler",
-            code=lambda_.Code.from_asset(
-                "..",
-                exclude=[
-                    ".git", ".github", ".venv", "__pycache__", "*.pyc",
-                    "infra", "tests", "*.md", ".env*", "requirements-dev.txt",
-                ],
-            ),
-            role=lambda_role,
-            timeout=cdk.Duration.seconds(30),
-            memory_size=256,
+            entry="../app",
+            index="main.py",
+            handler="handler",
+            runtime=lambda_.Runtime.PYTHON_3_13,
             environment={
                 "APP_ENV": env_name,
                 "LOG_LEVEL": "INFO",
                 "DYNAMODB_TABLE_NAME": table.table_name,
-                "SECRETS_MANAGER_SECRET_NAME": api_key_secret.secret_name
+                "SECRETS_MANAGER_SECRET_NAME": api_key_secret.secret_name,
             },
-            tracing=lambda_.Tracing.ACTIVE,
+            timeout=cdk.Duration.seconds(30),
+            memory_size=256,
         )
 
         # ── API Gateway ───────────────────────────────────────────────────────
