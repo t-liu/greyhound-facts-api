@@ -11,6 +11,52 @@ Public Users → API Gateway → AWS Lambda (FastAPI + Mangum) → DynamoDB
 
 **Stack:** Python 3.13 · FastAPI · Pydantic v2 · Mangum · AWS CDK · DynamoDB · GitHub Actions
 
+## Project Structure
+
+```
+greyhound-facts-api/
+├── app/                          # Application source
+│   ├── api/                      # Route handlers
+│   │   ├── admin.py              # Admin CRUD endpoints
+│   │   └── facts.py              # Public read endpoints + health
+│   ├── core/                     # Cross-cutting concerns
+│   │   ├── auth.py               # X-API-Key authentication
+│   │   ├── config.py             # pydantic-settings config
+│   │   ├── exceptions.py         # Exception handling
+│   │   ├── logging.py            # Structured JSON logging
+│   │   ├── middleware.py         # Request-ID middleware
+│   │   └── request_id.py         # UUID generator
+│   ├── models/                   # Pydantic request/response models
+│   │   ├── error.py
+│   │   ├── request.py
+│   │   └── response.py
+│   ├── repositories/             # Data access layer
+│   │   └── dynamodb_repository.py
+│   ├── services/                 # Business logic
+│   │   └── fact_service.py
+│   ├── lambda_handler.py         # Mangum Lambda wrapper
+│   ├── main.py                   # FastAPI application factory
+│   └── requirements.txt          # Production dependencies
+├── infra/                        # AWS CDK infrastructure
+│   ├── app.py                    # CDK app entry point
+│   └── stacks/
+│       ├── api_stack.py          # Lambda + API Gateway + warm-up
+│       ├── data_stack.py         # DynamoDB table
+│       ├── observability_stack.py # Logs, alarms, dashboard
+│       └── security_stack.py     # Secrets Manager + IAM
+├── scripts/
+│   └── seed.py                   # Database seeding script
+├── tests/
+│   ├── api/                      # API integration tests
+│   ├── integration/              # Repository integration tests
+│   ├── unit/                     # Unit tests
+│   └── conftest.py               # Shared fixtures
+├── .github/workflows/            # CI/CD pipelines
+├── pyproject.toml                # Project metadata & tool config
+├── requirements-dev.txt          # Dev dependencies
+└── requirements-infra.txt        # CDK dependencies
+```
+
 ## Endpoints
 
 ### Public
@@ -44,13 +90,14 @@ python3.13 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
+pip install -r requirements-infra.txt
 cp .env.example .env
 ```
 
 ### Run locally
 
 ```bash
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload
 ```
 
 API docs available at `http://localhost:8000/v1/docs`

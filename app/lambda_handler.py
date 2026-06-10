@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from mangum import Mangum
 
-from app.main import app
+from main import app
 
 _mangum = Mangum(app, lifespan="off")
 

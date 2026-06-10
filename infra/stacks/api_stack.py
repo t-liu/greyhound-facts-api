@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import aws_cdk as cdk
 import aws_cdk.aws_apigateway as apigw
 import aws_cdk.aws_dynamodb as dynamodb
@@ -36,10 +37,10 @@ class ApiStack(cdk.Stack):
         self.lambda_function = PythonFunction(
             self,
             "GreyhoundFactsLambda",
-            entry="../app",
-            index="main.py",
+            entry=os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "app")),
+            index="lambda_handler.py",
             handler="handler",
-            runtime=lambda_.Runtime.PYTHON_3_13,
+            runtime=lambda_.Runtime.PYTHON_3_12,
             environment={
                 "APP_ENV": env_name,
                 "LOG_LEVEL": "INFO",
