@@ -1,6 +1,6 @@
 # Greyhound Facts API
 
-A production-grade serverless API serving facts about Greyhound dogs, built as a senior-level backend engineering portfolio project.
+A production-grade serverless API serving facts about Greyhound dogs.
 
 ## Architecture
 
@@ -40,7 +40,7 @@ Public Users → API Gateway → AWS Lambda (FastAPI + Mangum) → DynamoDB
 ### Setup
 
 ```bash
-python -m venv .venv
+python3.13 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
