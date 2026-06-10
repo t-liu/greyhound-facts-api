@@ -51,8 +51,7 @@ class ApiStack(cdk.Stack):
                 "APP_ENV": env_name,
                 "LOG_LEVEL": "INFO",
                 "DYNAMODB_TABLE_NAME": table.table_name,
-                "SECRETS_MANAGER_SECRET_NAME": api_key_secret.secret_name,
-                "AWS_DEFAULT_REGION": self.region,
+                "SECRETS_MANAGER_SECRET_NAME": api_key_secret.secret_name
             },
             tracing=lambda_.Tracing.ACTIVE,
         )
