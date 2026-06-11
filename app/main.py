@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -25,23 +26,22 @@ configure_logging(settings.log_level)
 
 def create_app() -> FastAPI:
     """Build and configure the FastAPI application."""
+    
+    # ── DETECT API GATEWAY STAGE ───────────────────────────────────────
+    # If running inside AWS Lambda, prepend the stage name (e.g., /dev)
+    # If running locally, leave it as an empty string
+    stage = os.getenv("APP_ENV")
+    root_path = f"/{stage}" if os.getenv("AWS_LAMBDA_FUNCTION_NAME") and stage else ""
+    # ───────────────────────────────────────────────────────────────────
+
     _app = FastAPI(
         title="Greyhound Facts API",
         description="A production-grade serverless API serving facts about Greyhound dogs.",
         version="1.0.0",
+        root_path=root_path,  # <-- Pass the dynamic root path here
         docs_url="/v1/docs",
-        redoc_url="/v1/redoc",
         openapi_url="/v1/openapi.json",
-    )
-
-    # ── Middleware ────────────────────────────────────────────────────────────
-    _app.add_middleware(RequestIDMiddleware)
-    _app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        redoc_url="/v1/redoc"
     )
 
     # ── Routers ───────────────────────────────────────────────────────────────

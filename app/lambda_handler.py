@@ -1,23 +1,27 @@
-"""AWS Lambda handler — wraps the FastAPI app with Mangum.
-
-Early-returns immediately for EventBridge warm-up pings to avoid
-unnecessary FastAPI overhead.
-"""
+"""AWS Lambda handler — wraps the FastAPI app with Mangum."""
 
 from __future__ import annotations
 
-from mangum import Mangum
+import os
+import sys
+from types import ModuleType
 
-from main import app
+# ── VIRTUAL NAMESPACE PATCH ───────────────────────────────────────────
+# Creates a fake 'app' module pointing to the current execution directory
+# to prevent 'No module named app' errors during flattened Lambda execution.
+if "app" not in sys.modules:
+    app_mock = ModuleType("app")
+    app_mock.__path__ = [os.path.dirname(__file__)]
+    sys.modules["app"] = app_mock
+# ───────────────────────────────────────────────────────────────────────
+
+from mangum import Mangum
+from main import app  # Now resolves safely
 
 _mangum = Mangum(app, lifespan="off")
 
 
 def handler(event: dict, context: object) -> dict:
-    """Lambda entry point.
-
-    Intercepts warm-up events from EventBridge before they reach FastAPI.
-    """
     if isinstance(event, dict) and event.get("source") == "warmup":
         return {"statusCode": 200, "body": '"warmup ok"'}
     return _mangum(event, context)

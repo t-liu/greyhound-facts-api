@@ -88,7 +88,7 @@ greyhound-facts-api/
 ```bash
 python3.13 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r app/requirements.txt
 pip install -r requirements-dev.txt
 pip install -r requirements-infra.txt
 cp .env.example .env
@@ -128,6 +128,7 @@ Managed with AWS CDK (Python):
 cd infra
 pip install -r requirements.txt
 cdk bootstrap aws://ACCOUNT_ID/REGION
+cdk synth --all --app "python app.py" -c env=ENV
 # If you are inside a virtual environment:
 cdk deploy --all --app "../.venv/bin/python app.py" -c env=ENV
 # If you are NOT inside a virtual environment:
