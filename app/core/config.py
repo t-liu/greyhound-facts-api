@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,12 +17,20 @@ class Settings(BaseSettings):
     )
 
     # ── App ───────────────────────────────────────────────────────────────────
-    app_env: Literal["local", "dev", "prod"] = "local"
+    app_env: Literal["local", "dev", "prod"] = "dev"
     log_level: str = "INFO"
 
     # ── DynamoDB ──────────────────────────────────────────────────────────────
     dynamodb_table_name: str = "greyhound-facts"
     dynamodb_endpoint_url: str | None = None  # None → use AWS default
+
+    @model_validator(mode="after")
+    def append_env_suffix_to_table(self) -> Settings:
+        """Automatically append the environment suffix if not already present."""
+        suffix = f"-{self.app_env}"
+        if not self.dynamodb_table_name.endswith(suffix):
+            self.dynamodb_table_name = f"{self.dynamodb_table_name}{suffix}"
+        return self
 
     # ── Auth ──────────────────────────────────────────────────────────────────
     admin_api_key: str | None = None           # local plaintext override

@@ -130,7 +130,7 @@ pip install -r requirements.txt
 cdk bootstrap aws://ACCOUNT_ID/REGION
 cdk synth --all --app "python app.py" -c env=ENV
 # If you are inside a virtual environment:
-cdk deploy --all --app "../.venv/bin/python app.py" -c env=ENV
+cdk deploy --all --app "../.venv/bin/python app.py" -c env=dev -c account=ACCOUNT -c region=REGION
 # If you are NOT inside a virtual environment:
 cdk deploy --all --app "python app.py" -c env=ENV
 ```

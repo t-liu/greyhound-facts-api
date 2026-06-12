@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """CDK application entry point."""
 
+import os
 import aws_cdk as cdk
+from dotenv import load_dotenv
 
 from stacks.data_stack import DataStack
 from stacks.security_stack import SecurityStack
 from stacks.api_stack import ApiStack
 from stacks.observability_stack import ObservabilityStack
 
+load_dotenv()
 app = cdk.App()
 
 env_name = app.node.try_get_context("env") or "dev"
